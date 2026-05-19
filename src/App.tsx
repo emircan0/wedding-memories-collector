@@ -12,10 +12,11 @@ import {
   Target,
   Trophy,
   Upload,
-  UserRound,
   Users,
   WifiOff,
   X,
+  Dices,
+  Edit2
 } from 'lucide-react'
 import './App.css'
 import { EVENT_CONFIG, isSupabaseConfigured } from './config'
@@ -113,7 +114,6 @@ function App() {
 
   const activePrompt = getPromptById(activePromptId)
   const leaderboard = useMemo(() => buildLeaderboard(photos), [photos])
-  const contributors = new Set(photos.map((photo) => photo.guestName)).size
   const userRow = leaderboard.find((row) => row.name === guestName)
   const isFull = photos.length >= EVENT_CONFIG.maxPhotos
 
@@ -165,7 +165,13 @@ function App() {
 
     localStorage.setItem(GUEST_KEY, cleanName)
     setGuestName(cleanName)
-    setNotice('Hazır. Fotoğraf sırası sende.')
+    setNotice('Harika! Görevleri tamamlamaya başla.')
+  }
+
+  function shufflePrompt() {
+    const available = PHOTO_PROMPTS.filter((p) => p.id !== activePromptId)
+    const random = available[Math.floor(Math.random() * available.length)]
+    setActivePromptId(random.id)
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -268,21 +274,6 @@ function App() {
         </div>
       </header>
 
-      <section className="stats-strip" aria-label="Arşiv özeti">
-        <div>
-          <strong>{photos.length}</strong>
-          <span>foto</span>
-        </div>
-        <div>
-          <strong>{contributors}</strong>
-          <span>konuk</span>
-        </div>
-        <div>
-          <strong>{leaderboard[0]?.score || 0}</strong>
-          <span>lider</span>
-        </div>
-      </section>
-
       {notice && (
         <div className="notice" role="status">
           <Sparkles size={16} />
@@ -295,61 +286,69 @@ function App() {
 
       {activeTab === 'capture' && (
         <section className="capture-view" aria-label="Fotoğraf yükleme">
-          <div className="identity-panel">
-            <UserRound size={18} />
-            <input
-              value={draftName}
-              onChange={(event) => setDraftName(event.target.value)}
-              onBlur={saveGuestName}
-              placeholder="Adın"
-              maxLength={32}
-            />
-            <button type="button" onClick={saveGuestName}>
-              Kaydet
-            </button>
-          </div>
-
-          <div className="prompt-track" aria-label="Foto görevleri">
-            {PHOTO_PROMPTS.map((prompt) => {
-              const isActive = prompt.id === activePromptId
-
-              return (
-                <button
-                  className="prompt-chip"
-                  data-active={isActive}
-                  key={prompt.id}
-                  onClick={() => setActivePromptId(prompt.id)}
-                  style={{ '--prompt-accent': prompt.accent } as React.CSSProperties}
-                  type="button"
-                >
-                  <span>{prompt.title}</span>
-                  <strong>{prompt.points}</strong>
+          {!guestName ? (
+            <div className="welcome-panel">
+              <div className="welcome-icon">
+                <Camera size={34} />
+              </div>
+              <h2>Anı Biriktirmeye Başla</h2>
+              <p>Yakaladığın anların puanları sana yazılsın diye adını gir</p>
+              <div className="input-group">
+                <input
+                  value={draftName}
+                  onChange={(event) => setDraftName(event.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && saveGuestName()}
+                  placeholder="Adın veya lakabın..."
+                  maxLength={32}
+                  autoFocus
+                />
+                <button type="button" onClick={saveGuestName}>
+                  Başla
                 </button>
-              )
-            })}
-          </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="user-greeting">
+                <div className="greeting-text">
+                  <span className="eyebrow">Hoş geldin,</span>
+                  <strong>{guestName}</strong>
+                </div>
+                <button type="button" onClick={() => {
+                  setGuestName('')
+                  setDraftName('')
+                }} aria-label="İsmi Değiştir">
+                  <Edit2 size={16} />
+                </button>
+              </div>
 
           <div className="camera-panel">
             <div className="mission-row">
               <div>
-                <p className="eyebrow">Görev</p>
+                <p className="eyebrow">Sıradaki Görev</p>
                 <h2>{activePrompt.title}</h2>
                 <span>{activePrompt.cue}</span>
               </div>
-              <div className="point-badge">
-                <Target size={16} />
-                {activePrompt.points}
+              <div className="mission-actions">
+                <div className="point-badge" style={{ background: activePrompt.accent }}>
+                  <Target size={16} />
+                  {activePrompt.points}
+                </div>
+                <button className="shuffle-btn" type="button" onClick={shufflePrompt} aria-label="Görevi Değiştir">
+                  <Dices size={20} />
+                </button>
               </div>
             </div>
 
             <button
               className="camera-button"
+              style={{ background: activePrompt.accent, boxShadow: `0 8px 24px ${activePrompt.accent}45` }}
               disabled={isPreparing || isSaving || isFull}
               onClick={() => fileInputRef.current?.click()}
               type="button"
             >
               {isPreparing ? <Loader2 className="spin" size={22} /> : <Camera size={22} />}
-              <span>{draftImage ? 'Başka foto seç' : 'Foto çek veya seç'}</span>
+              <span>{draftImage ? 'Başka foto seç' : 'Görevi Tamamla!'}</span>
             </button>
 
             <input
@@ -389,6 +388,8 @@ function App() {
               </div>
             )}
           </div>
+          </>
+          )}
         </section>
       )}
 
