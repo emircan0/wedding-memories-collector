@@ -60,3 +60,26 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
     URL.revokeObjectURL(objectUrl)
   }
 }
+
+export async function flipImageHorizontally(prepared: PreparedImage): Promise<PreparedImage> {
+  const image = await loadImage(prepared.dataUrl)
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+
+  if (!context) {
+    throw new Error('Tarayıcı fotoğrafı işleyemedi.')
+  }
+
+  canvas.width = prepared.width
+  canvas.height = prepared.height
+  
+  // Aynalama (Mirror) işlemi
+  context.translate(prepared.width, 0)
+  context.scale(-1, 1)
+  context.drawImage(image, 0, 0, prepared.width, prepared.height)
+
+  const blob = await canvasToBlob(canvas)
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.72)
+
+  return { blob, dataUrl, width: prepared.width, height: prepared.height }
+}

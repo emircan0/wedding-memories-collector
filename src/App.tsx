@@ -16,12 +16,13 @@ import {
   WifiOff,
   X,
   Dices,
-  Edit2
+  Edit2,
+  FlipHorizontal
 } from 'lucide-react'
 import './App.css'
 import { EVENT_CONFIG, isSupabaseConfigured } from './config'
 import { DEFAULT_PROMPT, PHOTO_PROMPTS } from './data/prompts'
-import { prepareImage } from './lib/image'
+import { prepareImage, flipImageHorizontally } from './lib/image'
 import {
   likePhoto,
   loadPhotos,
@@ -197,6 +198,19 @@ function App() {
     }
   }
 
+  async function handleFlipImage() {
+    if (!draftImage) return
+    setIsPreparing(true)
+    try {
+      const flipped = await flipImageHorizontally(draftImage)
+      setDraftImage(flipped)
+    } catch (error) {
+      setNotice('Fotoğraf çevrilemedi.')
+    } finally {
+      setIsPreparing(false)
+    }
+  }
+
   async function handleUpload() {
     if (!guestName) {
       setNotice('Önce ismini kaydet.')
@@ -363,14 +377,21 @@ function App() {
             {draftImage ? (
               <div className="preview-frame">
                 <img alt="Seçilen fotoğraf" src={draftImage.dataUrl} />
-                <div>
-                  <span>
-                    {draftImage.width} x {draftImage.height}
-                  </span>
+                <div className="preview-actions">
                   <button
-                    disabled={isSaving}
+                    className="flip-btn"
+                    disabled={isPreparing || isSaving}
+                    onClick={handleFlipImage}
+                    type="button"
+                    title="Aynala (Çevir)"
+                  >
+                    <FlipHorizontal size={20} />
+                  </button>
+                  <button
+                    disabled={isSaving || isPreparing}
                     onClick={handleUpload}
                     type="button"
+                    className="upload-btn"
                   >
                     {isSaving ? (
                       <Loader2 className="spin" size={18} />
