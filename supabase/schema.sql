@@ -16,6 +16,9 @@ create index if not exists photos_event_slug_created_at_idx
 
 alter table public.photos enable row level security;
 
+-- Enable real-time broadcasts for the photos table so all guests see updates instantly
+alter publication supabase_realtime add table public.photos;
+
 drop policy if exists "Public photos are readable" on public.photos;
 create policy "Public photos are readable"
   on public.photos for select
