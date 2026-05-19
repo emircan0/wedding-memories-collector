@@ -6,56 +6,56 @@ export const PHOTO_PROMPTS: PhotoPrompt[] = [
     title: 'Gecenin İlk Gülüşü',
     cue: 'Mekana girerken yüzünde kocaman bir gülümseme olan bir konuğu yakala.',
     points: 15,
-    accent: '#FF2D55', // Apple Pink
+    accent: '#FF2D55', 
   },
   {
     id: 'ring-detail',
     title: 'Göz Alıcı Yüzük',
     cue: 'Işığın yüzükte parladığı o kusursuz makro detayı çek.',
     points: 20,
-    accent: '#007AFF', // Apple Blue
+    accent: '#007AFF', 
   },
   {
     id: 'table-story',
     title: 'Masa Estetiği',
-    cue: 'Kadehler, çiçekler ve mumlarla masanın en estetik kompozisyonunu bul.',
+    cue: 'Çiçekler ve mumlarla masanın en estetik kompozisyonunu bul.',
     points: 10,
-    accent: '#5856D6', // Apple Purple
+    accent: '#5856D6', 
   },
   {
     id: 'crew-shot',
     title: 'Efsane Kadro',
-    cue: 'En az 5 kişinin kameraya bakıp çılgınca poz verdiği o anı yakala.',
+    cue: 'En az 5 kişinin kameraya bakıp havalı bir poz verdiği o anı yakala.',
     points: 25,
-    accent: '#FF9500', // Apple Orange
+    accent: '#FF9500', 
   },
   {
     id: 'family-frame',
     title: 'Aile Bağları',
     cue: 'Aile büyüklerinden birinin, çiftle sarıldığı o duygusal anı bul.',
     points: 30,
-    accent: '#34C759', // Apple Green
+    accent: '#34C759', 
   },
   {
     id: 'dance-floor',
     title: 'Pistin Hakimi',
     cue: 'Pistte kendini müziğin ritmine en çok kaptıran kişiyi hareket halinde çek.',
     points: 25,
-    accent: '#FF3B30', // Apple Red
+    accent: '#FF3B30', 
   },
   {
     id: 'tiny-chaos',
     title: 'Tatlı Telaş',
-    cue: 'Arka planda koşturan bir garson, devrilmek üzere olan bir bardak veya komik bir aksilik.',
+    cue: 'Arka planda koşturan bir organizatör veya tatlı bir telaş anı.',
     points: 15,
-    accent: '#AF52DE', // Apple Purple
+    accent: '#AF52DE', 
   },
   {
     id: 'best-selfie',
     title: 'Kusursuz Özçekim',
     cue: 'Işığın en iyi olduğu yeri bul ve günün en havalı selfiesini çek.',
     points: 15,
-    accent: '#5AC8FA', // Apple Light Blue
+    accent: '#5AC8FA', 
   },
   {
     id: 'hidden-emotion',
@@ -72,25 +72,11 @@ export const PHOTO_PROMPTS: PhotoPrompt[] = [
     accent: '#FF9500', 
   },
   {
-    id: 'cheers',
-    title: 'Şerefe!',
-    cue: 'Havada tokuşan kadehleri tam zamanında, net bir şekilde çek.',
-    points: 20,
-    accent: '#FFCC00', // Apple Yellow
-  },
-  {
-    id: 'kids-rule',
-    title: 'Çocukların Krallığı',
-    cue: 'Pistte etrafta koşuşturan veya kendi dünyasında oynayan bir çocuk.',
-    points: 15,
-    accent: '#34C759', 
-  },
-  {
     id: 'shoe-game',
     title: 'Gecenin Ayakkabısı',
     cue: 'Salondaki en şık veya en ilginç ayakkabıyı (veya topukluyu) bul.',
     points: 10,
-    accent: '#8E8E93', // Apple Gray
+    accent: '#8E8E93', 
   },
   {
     id: 'mirror-check',
@@ -102,21 +88,21 @@ export const PHOTO_PROMPTS: PhotoPrompt[] = [
   {
     id: 'tired-feet',
     title: 'Pes Edenler',
-    cue: 'Topukluları çıkarıp kenara koyan veya yorgunluktan sandalyeye çöken biri.',
+    cue: 'Yorgunluktan sandalyeye çöken veya derin bir nefes alan biri.',
     points: 20,
     accent: '#FF3B30', 
   },
   {
     id: 'dj-vibe',
-    title: 'DJ ve Ritim',
+    title: 'Müziğin Ritmi',
     cue: 'DJ veya müzisyenlerin en coşkulu olduğu anı fotoğrafla.',
     points: 15,
     accent: '#5856D6', 
   },
   {
-    id: 'kiss',
+    id: 'romantic-look',
     title: 'Romantik An',
-    cue: 'Gecenin çiftinin (veya başka bir çiftin) romantik bir bakışmasını yakala.',
+    cue: 'Çiftin birbirine aşkla baktığı, o özel ve derin anı yakala.',
     points: 30,
     accent: '#FF2D55', 
   },
@@ -127,6 +113,69 @@ export const PHOTO_PROMPTS: PhotoPrompt[] = [
     points: 10,
     accent: '#FF9500', 
   },
+  {
+    id: 'candid-laugh',
+    title: 'Habersiz Kahkaha',
+    cue: 'Kameradan habersiz, içten ve büyük bir kahkaha atan birini bul.',
+    points: 20,
+    accent: '#34C759', 
+  },
+  {
+    id: 'generation-gap',
+    title: 'Kuşakların Buluşması',
+    cue: 'En genç konukla en yaşlı konuğun aynı karede olduğu bir an.',
+    points: 35,
+    accent: '#007AFF', 
+  },
+  {
+    id: 'flower-detail',
+    title: 'Gecenin Çiçeği',
+    cue: 'Gelin çiçeği veya mekandaki en güzel çiçek aranjmanına yakından bak.',
+    points: 15,
+    accent: '#AF52DE', 
+  },
+  {
+    id: 'group-selfie',
+    title: 'Kalabalık Selfie',
+    cue: 'Bir telefona sığmaya çalışan devasa bir arkadaş grubunu dışarıdan çek.',
+    points: 25,
+    accent: '#FFCC00', 
+  },
+  {
+    id: 'epic-pose',
+    title: 'Dergi Kapağı',
+    cue: 'Sanki moda dergisine poz veriyormuş gibi havalı duran bir konuk.',
+    points: 20,
+    accent: '#FF3B30', 
+  },
+  {
+    id: 'happy-tears',
+    title: 'Mutluluk Gözyaşı',
+    cue: 'Gelin veya damadın ailesinden birinin gözlerinin dolduğu o saf sevgi anı.',
+    points: 30,
+    accent: '#5AC8FA', 
+  },
+  {
+    id: 'dance-battle',
+    title: 'Dans Kapışması',
+    cue: 'Pistte hünerlerini sergileyen iki kişinin karşılıklı dans anı.',
+    points: 25,
+    accent: '#FF9500', 
+  },
+  {
+    id: 'sweet-tooth',
+    title: 'Tatlı Kaçamağı',
+    cue: 'Tatlı masasından gizlice bir şeyler aşıran veya tatlıya odaklanan biri.',
+    points: 15,
+    accent: '#8E8E93', 
+  },
+  {
+    id: 'farewell',
+    title: 'Gecenin Sonu',
+    cue: 'Mekandan ayrılırken sarılmalar, vedalaşmalar ve o tatlı yorgunluk hissi.',
+    points: 20,
+    accent: '#5856D6', 
+  }
 ]
 
 export const DEFAULT_PROMPT = PHOTO_PROMPTS[0]
