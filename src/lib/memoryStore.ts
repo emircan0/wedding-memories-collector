@@ -227,4 +227,23 @@ export function subscribeToPhotos(onPhotoChange: () => void) {
   }
 }
 
+export async function deletePhoto(photo: MemoryPhoto) {
+  if (!supabase) return
+
+  if (photo.imagePath) {
+    await supabase.storage
+      .from(SUPABASE_CONFIG.bucket)
+      .remove([photo.imagePath])
+  }
+
+  const { error } = await supabase
+    .from(SUPABASE_CONFIG.table)
+    .delete()
+    .eq('id', photo.id)
+
+  if (error) {
+    throw error
+  }
+}
+
 export { isSupabaseConfigured }

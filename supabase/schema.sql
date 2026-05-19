@@ -92,3 +92,13 @@ drop policy if exists "Memory photos are public" on storage.objects;
 create policy "Memory photos are public"
   on storage.objects for select
   using (bucket_id = 'memories');
+
+drop policy if exists "Guests can delete their own photos" on public.photos;
+create policy "Guests can delete their own photos"
+  on public.photos for delete
+  using (true);
+
+drop policy if exists "Guests can delete memory photos" on storage.objects;
+create policy "Guests can delete memory photos"
+  on storage.objects for delete
+  using (bucket_id = 'memories');

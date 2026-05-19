@@ -17,7 +17,8 @@ import {
   X,
   Dices,
   Edit2,
-  FlipHorizontal
+  FlipHorizontal,
+  Trash2
 } from 'lucide-react'
 import './App.css'
 import { EVENT_CONFIG, isSupabaseConfigured } from './config'
@@ -28,6 +29,7 @@ import {
   loadPhotos,
   savePhoto,
   subscribeToPhotos,
+  deletePhoto
 } from './lib/memoryStore'
 import type { MemoryPhoto, PreparedImage } from './types'
 
@@ -274,6 +276,19 @@ function App() {
     }
   }
 
+  async function handleDeletePhoto(photo: MemoryPhoto) {
+    if (!window.confirm('Bu fotoğrafı kalıcı olarak silmek istediğinize emin misiniz?')) return
+
+    setPhotos((current) => current.filter((item) => item.id !== photo.id))
+
+    try {
+      await deletePhoto(photo)
+      setNotice('Fotoğraf başarıyla silindi.')
+    } catch (error) {
+      setNotice('Fotoğraf silinemedi.')
+    }
+  }
+
   return (
     <main className="app-shell">
       <header className="event-bar">
@@ -436,15 +451,28 @@ function App() {
                           {photo.promptTitle} · {formatTime(photo.createdAt)}
                         </span>
                       </div>
-                      <button
-                        aria-label="Beğen"
-                        data-liked={isLiked}
-                        onClick={() => void handleLike(photo)}
-                        type="button"
-                      >
-                        <Heart size={17} />
-                        <span>{photo.likes}</span>
-                      </button>
+                      <div className="photo-actions">
+                        <button
+                          aria-label="Beğen"
+                          data-liked={isLiked}
+                          onClick={() => void handleLike(photo)}
+                          type="button"
+                          className="like-btn"
+                        >
+                          <Heart size={17} />
+                          <span>{photo.likes}</span>
+                        </button>
+                        {photo.guestName === guestName && (
+                          <button
+                            aria-label="Sil"
+                            onClick={() => void handleDeletePhoto(photo)}
+                            type="button"
+                            className="delete-btn"
+                          >
+                            <Trash2 size={17} />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </article>
                 )
