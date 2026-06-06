@@ -8,16 +8,35 @@ create table if not exists public.photos (
   image_url text not null,
   points integer not null default 0,
   likes integer not null default 0,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  hidden_at timestamptz
 );
+
+alter table public.photos
+  add column if not exists hidden_at timestamptz;
 
 create index if not exists photos_event_slug_created_at_idx
   on public.photos (event_slug, created_at desc);
 
+create index if not exists photos_event_slug_hidden_at_created_at_idx
+  on public.photos (event_slug, hidden_at, created_at desc);
+
 alter table public.photos enable row level security;
 
 -- Enable real-time broadcasts for the photos table so all guests see updates instantly
-alter publication supabase_realtime add table public.photos;
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'photos'
+  ) then
+    alter publication supabase_realtime add table public.photos;
+  end if;
+end;
+$$;
 
 drop policy if exists "Public photos are readable" on public.photos;
 create policy "Public photos are readable"
@@ -73,6 +92,46 @@ $$;
 
 grant execute on function public.increment_photo_like(uuid) to anon, authenticated;
 
+create or replace function public.hide_photo(photo_id uuid)
+returns table (
+  id uuid,
+  event_slug text,
+  guest_name text,
+  prompt_id text,
+  prompt_title text,
+  image_path text,
+  image_url text,
+  points integer,
+  likes integer,
+  created_at timestamptz,
+  hidden_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  return query
+  update public.photos
+  set hidden_at = coalesce(public.photos.hidden_at, now())
+  where public.photos.id = photo_id
+  returning
+    public.photos.id,
+    public.photos.event_slug,
+    public.photos.guest_name,
+    public.photos.prompt_id,
+    public.photos.prompt_title,
+    public.photos.image_path,
+    public.photos.image_url,
+    public.photos.points,
+    public.photos.likes,
+    public.photos.created_at,
+    public.photos.hidden_at;
+end;
+$$;
+
+grant execute on function public.hide_photo(uuid) to anon, authenticated;
+
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('memories', 'memories', true, 2500000, array['image/jpeg', 'image/png', 'image/webp'])
 on conflict (id) do update
@@ -94,11 +153,5 @@ create policy "Memory photos are public"
   using (bucket_id = 'memories');
 
 drop policy if exists "Guests can delete their own photos" on public.photos;
-create policy "Guests can delete their own photos"
-  on public.photos for delete
-  using (true);
-
+drop policy if exists "Guests can update their own photos" on public.photos;
 drop policy if exists "Guests can delete memory photos" on storage.objects;
-create policy "Guests can delete memory photos"
-  on storage.objects for delete
-  using (bucket_id = 'memories');

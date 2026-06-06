@@ -2,6 +2,13 @@ import type { PhotoPrompt } from '../types'
 
 export const PHOTO_PROMPTS: PhotoPrompt[] = [
   {
+    id: 'free-style',
+    title: 'Serbest Fotoğraf',
+    cue: 'Herhangi bir kategori seçmeden, dilediğin her anı özgürce yakala ve paylaş!',
+    points: 10,
+    accent: '#8E8E93', 
+  },
+  {
     id: 'first-smile',
     title: 'Gecenin İlk Gülüşü',
     cue: 'Mekana girerken yüzünde kocaman bir gülümseme olan bir konuğu yakala.',

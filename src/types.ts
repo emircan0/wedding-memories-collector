@@ -17,6 +17,7 @@ export type MemoryPhoto = {
   points: number
   likes: number
   createdAt: string
+  hiddenAt: string | null
 }
 
 export type PreparedImage = {

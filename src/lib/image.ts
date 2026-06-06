@@ -1,7 +1,7 @@
 import type { PreparedImage } from '../types'
 
-const MAX_SIDE = 1600
-const JPEG_QUALITY = 0.82
+const MAX_SIDE = 1200
+const JPEG_QUALITY = 0.75
 
 function loadImage(src: string) {
   return new Promise<HTMLImageElement>((resolve, reject) => {
@@ -53,7 +53,7 @@ export async function prepareImage(file: File): Promise<PreparedImage> {
     context.drawImage(image, 0, 0, width, height)
 
     const blob = await canvasToBlob(canvas)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.72)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.70)
 
     return { blob, dataUrl, width, height }
   } finally {
@@ -79,7 +79,7 @@ export async function flipImageHorizontally(prepared: PreparedImage): Promise<Pr
   context.drawImage(image, 0, 0, prepared.width, prepared.height)
 
   const blob = await canvasToBlob(canvas)
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.72)
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.70)
 
   return { blob, dataUrl, width: prepared.width, height: prepared.height }
 }

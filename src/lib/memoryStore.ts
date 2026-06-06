@@ -13,6 +13,7 @@ type SupabasePhotoRow = {
   points: number
   likes: number
   created_at: string
+  hidden_at?: string | null
 }
 
 type SavePhotoInput = {
@@ -43,6 +44,7 @@ function mapPhoto(row: SupabasePhotoRow): MemoryPhoto {
     points: row.points,
     likes: row.likes,
     createdAt: row.created_at,
+    hiddenAt: row.hidden_at || null,
   }
 }
 
@@ -75,7 +77,9 @@ async function getLocalPhotos() {
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
       const photos = (request.result as MemoryPhoto[])
-        .filter((photo) => photo.eventSlug === EVENT_CONFIG.slug)
+        .filter(
+          (photo) => photo.eventSlug === EVENT_CONFIG.slug && !photo.hiddenAt,
+        )
         .sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -115,7 +119,9 @@ export async function loadPhotos() {
     throw error
   }
 
-  return (data as SupabasePhotoRow[]).map(mapPhoto)
+  return (data as SupabasePhotoRow[])
+    .filter((row) => !row.hidden_at)
+    .map(mapPhoto)
 }
 
 export async function savePhoto(input: SavePhotoInput) {
@@ -133,6 +139,7 @@ export async function savePhoto(input: SavePhotoInput) {
       points: input.prompt.points,
       likes: 0,
       createdAt,
+      hiddenAt: null,
     })
   }
 
@@ -203,7 +210,7 @@ export async function likePhoto(photo: MemoryPhoto) {
   return mapPhoto(updatedPhoto)
 }
 
-export function subscribeToPhotos(onPhotoChange: () => void) {
+export function subscribeToPhotos(onPhotoChange: (payload: unknown) => void) {
   if (!supabase) {
     return () => undefined
   }
@@ -216,9 +223,10 @@ export function subscribeToPhotos(onPhotoChange: () => void) {
         event: '*',
         schema: 'public',
         table: SUPABASE_CONFIG.table,
-        filter: `event_slug=eq.${EVENT_CONFIG.slug}`,
       },
-      onPhotoChange,
+      (payload) => {
+        onPhotoChange(payload)
+      },
     )
     .subscribe()
 
@@ -228,21 +236,53 @@ export function subscribeToPhotos(onPhotoChange: () => void) {
 }
 
 export async function deletePhoto(photo: MemoryPhoto) {
-  if (!supabase) return
+  const hiddenAt = new Date().toISOString()
 
-  if (photo.imagePath) {
-    await supabase.storage
-      .from(SUPABASE_CONFIG.bucket)
-      .remove([photo.imagePath])
+  if (!supabase) {
+    const db = await openLocalDb()
+    return new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite')
+      const store = transaction.objectStore(STORE_NAME)
+
+      const getReq = store.get(photo.id)
+      getReq.onsuccess = () => {
+        const data = getReq.result as MemoryPhoto
+        if (data) {
+          data.hiddenAt = hiddenAt
+          store.put(data)
+        }
+        resolve()
+      }
+      getReq.onerror = () => reject(getReq.error)
+    }).finally(() => db.close())
   }
 
-  const { error } = await supabase
-    .from(SUPABASE_CONFIG.table)
-    .delete()
-    .eq('id', photo.id)
+  const hideResult = await supabase.rpc('hide_photo', {
+    photo_id: photo.id,
+  })
 
-  if (error) {
-    throw error
+  if (!hideResult.error) {
+    return
+  }
+
+  const hiddenAtUpdate = await supabase
+    .from(SUPABASE_CONFIG.table)
+    .update({ hidden_at: hiddenAt })
+    .eq('id', photo.id)
+    .select('id')
+
+  if (!hiddenAtUpdate.error && hiddenAtUpdate.data && hiddenAtUpdate.data.length > 0) {
+    return
+  }
+
+  const slugFallback = await supabase
+    .from(SUPABASE_CONFIG.table)
+    .update({ event_slug: `${EVENT_CONFIG.slug}-deleted` })
+    .eq('id', photo.id)
+    .select('id')
+
+  if (slugFallback.error || !slugFallback.data || slugFallback.data.length === 0) {
+    throw slugFallback.error || hiddenAtUpdate.error || hideResult.error
   }
 }
 
