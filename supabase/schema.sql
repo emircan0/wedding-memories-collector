@@ -6,6 +6,7 @@ create table if not exists public.photos (
   prompt_title text not null,
   image_path text,
   image_url text not null,
+  note text,
   points integer not null default 0,
   likes integer not null default 0,
   created_at timestamptz not null default now(),
@@ -14,6 +15,9 @@ create table if not exists public.photos (
 
 alter table public.photos
   add column if not exists hidden_at timestamptz;
+
+alter table public.photos
+  add column if not exists note text;
 
 create index if not exists photos_event_slug_created_at_idx
   on public.photos (event_slug, created_at desc);
@@ -48,8 +52,8 @@ create policy "Guests can add photos"
   on public.photos for insert
   with check (
     length(guest_name) between 1 and 32
-    and points between 0 and 30
-    and event_slug = 'nisan'
+    and points between 0 and 50
+    and (event_slug = 'irem-vedat' or event_slug = 'nisan' or event_slug = 'rabia-nisan')
   );
 
 drop policy if exists "Guests can like photos" on public.photos;
@@ -63,6 +67,7 @@ returns table (
   prompt_title text,
   image_path text,
   image_url text,
+  note text,
   points integer,
   likes integer,
   created_at timestamptz
@@ -84,6 +89,7 @@ begin
     public.photos.prompt_title,
     public.photos.image_path,
     public.photos.image_url,
+    public.photos.note,
     public.photos.points,
     public.photos.likes,
     public.photos.created_at;
@@ -101,6 +107,7 @@ returns table (
   prompt_title text,
   image_path text,
   image_url text,
+  note text,
   points integer,
   likes integer,
   created_at timestamptz,
@@ -123,6 +130,7 @@ begin
     public.photos.prompt_title,
     public.photos.image_path,
     public.photos.image_url,
+    public.photos.note,
     public.photos.points,
     public.photos.likes,
     public.photos.created_at,
@@ -144,7 +152,11 @@ create policy "Guests can upload memory photos"
   on storage.objects for insert
   with check (
     bucket_id = 'memories'
-    and (storage.foldername(name))[1] = 'nisan'
+    and (
+      (storage.foldername(name))[1] = 'irem-vedat'
+      or (storage.foldername(name))[1] = 'nisan'
+      or (storage.foldername(name))[1] = 'rabia-nisan'
+    )
   );
 
 drop policy if exists "Memory photos are public" on storage.objects;

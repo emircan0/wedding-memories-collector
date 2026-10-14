@@ -1,10 +1,10 @@
 export const EVENT_CONFIG = {
-  title: import.meta.env.VITE_EVENT_TITLE || 'Nişan Hatıraları',
+  title: import.meta.env.VITE_EVENT_TITLE || 'Rabia Mert - Nişan Hatıraları',
   subtitle:
     import.meta.env.VITE_EVENT_SUBTITLE ||
-    'Bu geceyi konukların gözünden topla',
+    'Bu özel günü fotoğraflar ve güzel notlarla ölümsüzleştirin',
   slug: import.meta.env.VITE_EVENT_SLUG || 'nisan',
-  maxPhotos: Number(import.meta.env.VITE_MAX_PHOTOS || 220),
+  maxPhotos: Number(import.meta.env.VITE_MAX_PHOTOS || 300),
 }
 
 export const SUPABASE_CONFIG = {

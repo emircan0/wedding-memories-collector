@@ -10,6 +10,7 @@ type SupabasePhotoRow = {
   prompt_title: string
   image_path: string | null
   image_url: string
+  note?: string | null
   points: number
   likes: number
   created_at: string
@@ -20,6 +21,7 @@ type SavePhotoInput = {
   id: string
   guestName: string
   prompt: PhotoPrompt
+  note?: string | null
   imageBlob: Blob
   localDataUrl: string
 }
@@ -41,6 +43,7 @@ function mapPhoto(row: SupabasePhotoRow): MemoryPhoto {
     promptTitle: row.prompt_title,
     imagePath: row.image_path,
     imageUrl: row.image_url,
+    note: row.note || null,
     points: row.points,
     likes: row.likes,
     createdAt: row.created_at,
@@ -126,6 +129,7 @@ export async function loadPhotos() {
 
 export async function savePhoto(input: SavePhotoInput) {
   const createdAt = new Date().toISOString()
+  const noteContent = input.note?.trim() || null
 
   if (!supabase) {
     return putLocalPhoto({
@@ -136,6 +140,7 @@ export async function savePhoto(input: SavePhotoInput) {
       promptTitle: input.prompt.title,
       imagePath: null,
       imageUrl: input.localDataUrl,
+      note: noteContent,
       points: input.prompt.points,
       likes: 0,
       createdAt,
@@ -160,7 +165,7 @@ export async function savePhoto(input: SavePhotoInput) {
     .from(SUPABASE_CONFIG.bucket)
     .getPublicUrl(imagePath)
 
-  const row = {
+  const rowWithNote = {
     id: input.id,
     event_slug: EVENT_CONFIG.slug,
     guest_name: input.guestName,
@@ -168,6 +173,7 @@ export async function savePhoto(input: SavePhotoInput) {
     prompt_title: input.prompt.title,
     image_path: imagePath,
     image_url: publicUrlData.publicUrl,
+    note: noteContent,
     points: input.prompt.points,
     likes: 0,
     created_at: createdAt,
@@ -175,11 +181,36 @@ export async function savePhoto(input: SavePhotoInput) {
 
   const { data, error } = await supabase
     .from(SUPABASE_CONFIG.table)
-    .insert(row)
+    .insert(rowWithNote)
     .select('*')
     .single()
 
   if (error) {
+    if (error.message?.includes('note') || error.code === 'PGRST204' || error.message?.includes('column')) {
+      const rowWithoutNote = {
+        id: rowWithNote.id,
+        event_slug: rowWithNote.event_slug,
+        guest_name: rowWithNote.guest_name,
+        prompt_id: rowWithNote.prompt_id,
+        prompt_title: rowWithNote.prompt_title,
+        image_path: rowWithNote.image_path,
+        image_url: rowWithNote.image_url,
+        points: rowWithNote.points,
+        likes: rowWithNote.likes,
+        created_at: rowWithNote.created_at,
+      }
+      const retryResult = await supabase
+        .from(SUPABASE_CONFIG.table)
+        .insert(rowWithoutNote)
+        .select('*')
+        .single()
+
+      if (retryResult.error) {
+        throw retryResult.error
+      }
+      const mapped = mapPhoto(retryResult.data as SupabasePhotoRow)
+      return { ...mapped, note: noteContent }
+    }
     throw error
   }
 

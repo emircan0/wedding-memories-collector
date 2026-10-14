@@ -1,6 +1,15 @@
-# Nişan Hatıraları
+# Rabia Mert - Nişan Hatıraları & Dijital Anı Defteri
 
-QR ile açılan, mobil öncelikli fotoğraf arşivi. Konuklar isimlerini yazar, sadece fotoğraf yükler, herkes ortak galeriyi ve skor tablosunu görür.
+QR kod ile açılan, mobil öncelikli interaktif fotoğraf arşivi ve anı defteri. Konuklar isimlerini yazar, nişandan fotoğraflar yükler, çifte özel tebrik/dilek notları bırakır; herkes ortak galeriyi, anı defterini ve oyunlaştırılmış skor tablosunu görür.
+
+## Öne Çıkan Özellikler
+
+- 📸 **Nişana Özel Fotoğraf Görevleri:** Tuzlu Kahve Sınavı, Yüzükler & Kurdele, Makas Kesmiyor, Nişan Tepsisi vb. 20 adet eğlenceli görev.
+- 💌 **Dijital Anı Defteri (Not Yazma):** Fotoğraf yüklerken çifte özel tebrik notu ekleyebilme ya da fotoğrafsız doğrudan sadece tebrik/dilek notu yazabilme (otomatik şık dijital hatıra kartpostalı üretilir).
+- 🖼️ **Tam Ekran Lightbox:** Fotoğrafları ve yazılan notları büyük boyutta inceleme, tek tıkla cihaza kaydetme.
+- 🏆 **Skor & Liderlik Tablosu:** Görev puanları ve beğeni sistemi ile konukları anı yakalamaya teşvik eden oyunlaştırma.
+- 📥 **Hatıra Defteri İndirme:** Etkinlik sonunda tüm konukların yazdığı tebrik notlarını tek tıkla arşiv metin dosyası olarak dışa aktarma.
+- ⚡ **Offline & Demo Desteği:** Supabase olmasa bile yerel IndexedDB ile anında çalışır; internet kesintisinde verileri korur.
 
 ## Çalıştırma
 
@@ -9,32 +18,27 @@ npm install
 npm run dev
 ```
 
-Supabase ayarları yoksa uygulama demo modunda IndexedDB ile aynı cihazda çalışır. Gerçek etkinlik için `.env.example` dosyasını `.env.local` olarak kopyalayıp Supabase bilgilerini doldur.
+Supabase ayarları yoksa uygulama demo modunda IndexedDB ile aynı cihazda çalışır. Gerçek etkinlik için `.env.example` dosyasını `.env.local` olarak kopyalayıp Supabase bilgilerini doldurun.
 
-## Supabase kurulumu
+## Supabase Kurulumu
 
-1. Supabase projesi oluştur.
-2. SQL Editor içinde `supabase/schema.sql` dosyasını çalıştır.
-3. Project Settings > API ekranından URL ve anon key değerlerini `.env.local` dosyasına ekle.
-4. Uygulamayı Vercel veya Netlify'a deploy et.
-5. Deploy URL'ini QR koda çevir.
+1. [Supabase](https://supabase.com) üzerinde bir proje oluşturun.
+2. SQL Editor içinde `supabase/schema.sql` dosyasını çalıştırın.
+   *(Mevcut veritabanınız varsa sadece `alter table public.photos add column if not exists note text;` çalıştırmanız yeterlidir).*
+3. Project Settings > API ekranından URL ve anon/publishable key değerlerini `.env.local` dosyasına ekleyin.
+4. Uygulamayı Vercel, Netlify veya Cloudflare Pages üzerine deploy edin.
+5. Deploy URL'ini masa kartları veya davetiyeler için QR koda çevirin.
 
-Fotoğraflar tarayıcıda en uzun kenar 1600 px olacak şekilde JPEG'e çevrilir. Bu, 200 civarı fotoğraf için depolama ve mobil yükleme hızını makul tutar.
-
-## Ortam değişkenleri
+## Ortam Değişkenleri (.env.local)
 
 ```bash
-VITE_EVENT_TITLE="Nişan Hatıraları"
-VITE_EVENT_SUBTITLE="Bu geceyi konukların gözünden topla"
+VITE_EVENT_TITLE="Rabia Mert - Nişan Hatıraları"
+VITE_EVENT_SUBTITLE="Bu özel günü fotoğraflar ve güzel notlarla ölümsüzleştirin"
 VITE_EVENT_SLUG="nisan"
-VITE_MAX_PHOTOS="220"
-VITE_SUPABASE_URL="https://..."
-VITE_SUPABASE_ANON_KEY="..."
-VITE_SUPABASE_PUBLISHABLE_KEY="..."
+VITE_MAX_PHOTOS="300"
+
+VITE_SUPABASE_URL="https://your-project.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY="your-anon-or-publishable-key"
 VITE_SUPABASE_BUCKET="memories"
 VITE_SUPABASE_TABLE="photos"
 ```
-
-Supabase'in Vite ekranında verdiği `VITE_SUPABASE_PUBLISHABLE_KEY` değerini kullanabilirsin. Eski anon key adıyla gelen projeler için `VITE_SUPABASE_ANON_KEY` de destekleniyor; ikisinden biri yeterli.
-
-`VITE_EVENT_SLUG` değerini değiştirirsen `supabase/schema.sql` içindeki `nisan` klasör/policy koşullarını da aynı slug ile güncelle.

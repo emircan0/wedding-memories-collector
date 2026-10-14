@@ -19,18 +19,22 @@ import {
   Edit2,
   FlipHorizontal,
   Trash2,
-  ChevronDown
+  ChevronDown,
+  Download,
+  MessageSquareQuote,
+  FileText,
+  BookHeart,
 } from 'lucide-react'
 import './App.css'
 import { EVENT_CONFIG, isSupabaseConfigured } from './config'
 import { DEFAULT_PROMPT, PHOTO_PROMPTS } from './data/prompts'
-import { prepareImage, flipImageHorizontally } from './lib/image'
+import { prepareImage, flipImageHorizontally, createNoteCardImage } from './lib/image'
 import {
   likePhoto,
   loadPhotos,
   savePhoto,
   subscribeToPhotos,
-  deletePhoto
+  deletePhoto,
 } from './lib/memoryStore'
 import type { MemoryPhoto, PreparedImage } from './types'
 
@@ -58,6 +62,7 @@ type RealtimePhotoRow = {
   prompt_title: string
   image_path: string | null
   image_url: string
+  note?: string | null
   points: number
   likes: number
   created_at: string
@@ -71,7 +76,7 @@ type PhotoChangePayload = {
 }
 
 const TABS: Tab[] = [
-  { id: 'capture', label: 'Foto', icon: Camera },
+  { id: 'capture', label: 'Foto & Not', icon: Camera },
   { id: 'gallery', label: 'Galeri', icon: Images },
   { id: 'score', label: 'Skor', icon: Trophy },
 ]
@@ -110,6 +115,7 @@ function mapRealtimePhoto(row: RealtimePhotoRow): MemoryPhoto {
     promptTitle: row.prompt_title,
     imagePath: row.image_path,
     imageUrl: row.image_url,
+    note: row.note || null,
     points: row.points,
     likes: row.likes,
     createdAt: row.created_at,
@@ -160,6 +166,12 @@ function App() {
   )
   const [draftName, setDraftName] = useState(guestName)
   const [draftImages, setDraftImages] = useState<PreparedImage[]>([])
+  const [draftNote, setDraftNote] = useState('')
+  const [isNoteOnlyModalOpen, setIsNoteOnlyModalOpen] = useState(false)
+  const [standaloneNote, setStandaloneNote] = useState('')
+  const [activeModalPhoto, setActiveModalPhoto] = useState<MemoryPhoto | null>(null)
+  const [galleryFilter, setGalleryFilter] = useState<'all' | 'photos' | 'notes'>('all')
+
   const [photos, setPhotos] = useState<MemoryPhoto[]>([])
   const [likedPhotos, setLikedPhotos] = useState<string[]>(getLikedPhotoIds)
   const [hiddenPhotos, setHiddenPhotos] = useState<string[]>(getHiddenPhotoIds)
@@ -171,6 +183,7 @@ function App() {
 
   const activePrompt = getPromptById(activePromptId)
   const draftImage = draftImages[0] || null
+
   const visiblePhotos = useMemo(
     () =>
       photos.filter(
@@ -181,6 +194,22 @@ function App() {
       ),
     [hiddenPhotos, photos],
   )
+
+  const filteredPhotos = useMemo(() => {
+    if (galleryFilter === 'notes') {
+      return visiblePhotos.filter((p) => Boolean(p.note?.trim()))
+    }
+    if (galleryFilter === 'photos') {
+      return visiblePhotos.filter((p) => p.promptId !== 'tebrik-dilek')
+    }
+    return visiblePhotos
+  }, [galleryFilter, visiblePhotos])
+
+  const totalNotesCount = useMemo(
+    () => visiblePhotos.filter((p) => Boolean(p.note?.trim())).length,
+    [visiblePhotos],
+  )
+
   const leaderboard = useMemo(() => buildLeaderboard(visiblePhotos), [visiblePhotos])
   const userRow = leaderboard.find((row) => row.name === guestName)
   const isFull = visiblePhotos.length >= EVENT_CONFIG.maxPhotos
@@ -249,7 +278,7 @@ function App() {
             setPhotos((current) => current.filter((p) => p.id !== newRow.id))
           } else {
             setPhotos((current) =>
-              current.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p))
+              current.map((p) => (p.id === updatedPhoto.id ? updatedPhoto : p)),
             )
           }
         } else if (eventType === 'DELETE') {
@@ -276,13 +305,13 @@ function App() {
     const cleanName = draftName.trim().slice(0, 32)
 
     if (!cleanName) {
-      setNotice('İsmini yaz, puanlar sana gelsin.')
+      setNotice('İsmini yaz, puanlar ve notlar sana gelsin.')
       return
     }
 
     localStorage.setItem(GUEST_KEY, cleanName)
     setGuestName(cleanName)
-    setNotice('Harika! Görevleri tamamlamaya başla.')
+    setNotice('Harika! Anı biriktirmeye ve not bırakmaya başlayabilirsin.')
   }
 
   function shufflePrompt() {
@@ -320,7 +349,7 @@ function App() {
       if (files.length > availableSlots) {
         setNotice(`İlk ${availableSlots} fotoğraf eklendi; limit ${MAX_BATCH_PHOTOS}.`)
       } else {
-        setNotice(`${preparedImages.length} fotoğraf hazır.`)
+        setNotice(`${preparedImages.length} fotoğraf hazır. Dilersen bir not da ekleyebilirsin.`)
       }
     } catch (error) {
       setNotice(
@@ -360,7 +389,7 @@ function App() {
     }
 
     if (!draftImages.length) {
-      setNotice('Bir fotoğraf seç.')
+      setNotice('Bir fotoğraf seç veya sadece not yaz.')
       return
     }
 
@@ -374,6 +403,7 @@ function App() {
 
     const uploadedPhotos: MemoryPhoto[] = []
     let failedAt = -1
+    const noteContent = draftNote.trim() || null
 
     try {
       for (const [index, image] of draftImages.entries()) {
@@ -382,6 +412,7 @@ function App() {
             id: crypto.randomUUID(),
             guestName,
             prompt: activePrompt,
+            note: noteContent,
             imageBlob: image.blob,
             localDataUrl: image.dataUrl,
           })
@@ -411,12 +442,54 @@ function App() {
       }
 
       setDraftImages([])
+      setDraftNote('')
       setActiveTab('gallery')
       setNotice(
-        `${uploadedPhotos.length} fotoğraf yüklendi. ${uploadedPhotos.length * activePrompt.points} puan geldi.`,
+        `${uploadedPhotos.length} anı paylaşıldı. ${uploadedPhotos.length * activePrompt.points} puan kazandın! 🎉`,
       )
     } catch {
       setNotice('Fotoğraf yüklenemedi.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleSaveStandaloneNote() {
+    if (!guestName) {
+      setNotice('Önce ismini kaydet.')
+      return
+    }
+
+    const cleanNote = standaloneNote.trim()
+    if (!cleanNote) {
+      setNotice('Lütfen bir tebrik veya anı notu yaz.')
+      return
+    }
+
+    setIsSaving(true)
+    setNotice('')
+
+    try {
+      const noteCard = await createNoteCardImage(guestName, cleanNote)
+      const notePrompt =
+        PHOTO_PROMPTS.find((p) => p.id === 'tebrik-dilek') || activePrompt
+
+      const photo = await savePhoto({
+        id: crypto.randomUUID(),
+        guestName,
+        prompt: notePrompt,
+        note: cleanNote,
+        imageBlob: noteCard.blob,
+        localDataUrl: noteCard.dataUrl,
+      })
+
+      setPhotos((current) => [photo, ...current.filter((item) => item.id !== photo.id)])
+      setStandaloneNote('')
+      setIsNoteOnlyModalOpen(false)
+      setActiveTab('gallery')
+      setNotice(`Tebrik notun anı defterine eklendi! +${notePrompt.points} puan kazandın. 💌✨`)
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Not kaydedilemedi.')
     } finally {
       setIsSaving(false)
     }
@@ -430,17 +503,27 @@ function App() {
     const nextLikedPhotos = [...likedPhotos, photo.id]
     setLikedPhotos(nextLikedPhotos)
     localStorage.setItem(LIKED_KEY, JSON.stringify(nextLikedPhotos))
+
     setPhotos((current) =>
       current.map((item) =>
         item.id === photo.id ? { ...item, likes: item.likes + 1 } : item,
       ),
     )
 
+    if (activeModalPhoto?.id === photo.id) {
+      setActiveModalPhoto((current) =>
+        current ? { ...current, likes: current.likes + 1 } : null,
+      )
+    }
+
     try {
       const updated = await likePhoto(photo)
       setPhotos((current) =>
         current.map((item) => (item.id === updated.id ? updated : item)),
       )
+      if (activeModalPhoto?.id === updated.id) {
+        setActiveModalPhoto(updated)
+      }
     } catch (error) {
       setNotice(error instanceof Error ? error.message : 'Beğeni kaydedilemedi.')
     }
@@ -452,24 +535,64 @@ function App() {
       return
     }
 
-    if (!window.confirm('Bu fotoğrafı silmek istediğinize emin misiniz?')) return
+    if (!window.confirm('Bu anıyı silmek istediğinize emin misiniz?')) return
+
+    if (activeModalPhoto?.id === photo.id) {
+      setActiveModalPhoto(null)
+    }
 
     rememberHiddenPhoto(photo.id)
     setPhotos((current) => current.filter((item) => item.id !== photo.id))
 
     try {
       await deletePhoto(photo)
-      setNotice('Fotoğraf galeriden kaldırıldı.')
+      setNotice('Anı galeriden kaldırıldı.')
     } catch {
-      setNotice('Fotoğraf bu cihazda gizlendi; database güncellenemedi.')
+      setNotice('Anı bu cihazda gizlendi; database güncellenemedi.')
     }
+  }
+
+  function exportGuestbook() {
+    const notes = visiblePhotos
+      .filter((p) => Boolean(p.note?.trim()))
+      .map((p) => `• [${p.guestName} - ${formatTime(p.createdAt)}]\n  "${p.note}"`)
+      .join('\n\n')
+
+    const content = `=====================================================
+${EVENT_CONFIG.title}
+DİJİTAL ANILAR & TEBRİK DEFTERİ
+=====================================================
+Etkinlik: ${EVENT_CONFIG.title}
+Toplam Fotoğraf & Hatıra: ${visiblePhotos.length}
+Yazılan Not Sayısı: ${totalNotesCount}
+Oluşturulma: ${new Date().toLocaleString('tr-TR')}
+
+-----------------------------------------------------
+KONUKLARIN TEBRİK & DİLEK NOTLARI:
+-----------------------------------------------------
+
+${notes || 'Henüz not yazılmamış.'}
+
+=====================================================
+Rabia Mert ve sevdiklerine bir ömür boyu mutluluklar dileriz!
+=====================================================
+`
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${EVENT_CONFIG.slug}-tebrik-ve-anilar.txt`
+    a.click()
+    URL.revokeObjectURL(url)
+    setNotice('Tüm anı ve tebrik notları indirildi! 📥')
   }
 
   return (
     <main className="app-shell">
       <header className="event-bar">
         <div>
-          <p className="eyebrow">QR Hatıra Arşivi</p>
+          <p className="eyebrow">QR Hatıra Arşivi & Anı Defteri</p>
           <h1>{EVENT_CONFIG.title}</h1>
           <p>{EVENT_CONFIG.subtitle}</p>
         </div>
@@ -490,14 +613,14 @@ function App() {
       )}
 
       {activeTab === 'capture' && (
-        <section className="capture-view" aria-label="Fotoğraf yükleme">
+        <section className="capture-view" aria-label="Fotoğraf ve Not Yükleme">
           {!guestName ? (
             <div className="welcome-panel">
               <div className="welcome-icon">
                 <Camera size={34} />
               </div>
               <h2>Anı Biriktirmeye Başla</h2>
-              <p>Yakaladığın anların puanları sana yazılsın diye adını gir</p>
+              <p>Fotoğrafların, tebrik notların ve puanların sana yazılsın diye adını gir</p>
               <div className="input-group">
                 <input
                   value={draftName}
@@ -519,156 +642,258 @@ function App() {
                   <span className="eyebrow">Hoş geldin,</span>
                   <strong>{guestName}</strong>
                 </div>
-                <button type="button" onClick={() => {
-                  setGuestName('')
-                  setDraftName('')
-                }} aria-label="İsmi Değiştir">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setGuestName('')
+                    setDraftName('')
+                  }}
+                  aria-label="İsmi Değiştir"
+                >
                   <Edit2 size={16} />
                 </button>
               </div>
 
-          <div className="camera-panel">
-            <div className="mission-row">
-              <div className="mission-info-clickable" onClick={() => setIsSelectorOpen(true)} role="button" tabIndex={0}>
-                <p className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  Görev Seç <ChevronDown size={14} />
-                </p>
-                <h2>{activePrompt.title}</h2>
-                <span>{activePrompt.cue}</span>
-              </div>
-              <div className="mission-actions">
-                <div className="point-badge" style={{ background: activePrompt.accent }}>
-                  <Target size={16} />
-                  {activePrompt.points}
-                </div>
-                <button className="shuffle-btn" type="button" onClick={shufflePrompt} aria-label="Görevi Değiştir">
-                  <Dices size={20} />
-                </button>
-              </div>
-            </div>
-
-            <div className="capture-actions">
-              <button
-                className="camera-button"
-                style={{ background: activePrompt.accent, boxShadow: `0 8px 24px ${activePrompt.accent}45` }}
-                disabled={isPreparing || isSaving || isFull}
-                onClick={() => cameraInputRef.current?.click()}
-                type="button"
-              >
-                {isPreparing ? <Loader2 className="spin" size={20} /> : <Camera size={20} />}
-                <span>Fotoğraf Çek</span>
-              </button>
-
-              <button
-                className="gallery-button"
-                disabled={isPreparing || isSaving || isFull}
-                onClick={() => galleryInputRef.current?.click()}
-                type="button"
-              >
-                {isPreparing ? <Loader2 className="spin" size={20} /> : <ImagePlus size={20} />}
-                <span>{draftImages.length ? 'Galeriden Ekle' : 'Galeriden Seç'}</span>
-              </button>
-            </div>
-
-            <input
-              accept="image/*"
-              capture="environment"
-              hidden
-              onChange={handleFileChange}
-              ref={cameraInputRef}
-              type="file"
-            />
-
-            <input
-              accept="image/*"
-              hidden
-              multiple
-              onChange={handleFileChange}
-              ref={galleryInputRef}
-              type="file"
-            />
-
-            {draftImages.length ? (
-              <div className="preview-frame">
-                <div className="preview-grid">
-                  {draftImages.map((image, index) => (
-                    <div className="preview-tile" key={`${image.dataUrl}-${index}`}>
-                      <img alt={`Seçilen fotoğraf ${index + 1}`} src={image.dataUrl} />
-                      <button
-                        aria-label="Fotoğrafı çıkar"
-                        disabled={isSaving || isPreparing}
-                        onClick={() => removeDraftImage(index)}
-                        type="button"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <div className="preview-actions">
-                  <span className="batch-count">
-                    {draftImages.length}/{MAX_BATCH_PHOTOS} fotoğraf
-                  </span>
-                  {draftImages.length === 1 && (
-                    <button
-                      className="flip-btn"
-                      disabled={isPreparing || isSaving}
-                      onClick={handleFlipImage}
-                      type="button"
-                      title="Aynala (Çevir)"
-                    >
-                      <FlipHorizontal size={20} />
-                    </button>
-                  )}
-                  <button
-                    disabled={isSaving || isPreparing}
-                    onClick={handleUpload}
-                    type="button"
-                    className="upload-btn"
+              <div className="camera-panel">
+                <div className="mission-row">
+                  <div
+                    className="mission-info-clickable"
+                    onClick={() => setIsSelectorOpen(true)}
+                    role="button"
+                    tabIndex={0}
                   >
-                    {isSaving ? (
-                      <Loader2 className="spin" size={18} />
-                    ) : (
-                      <Upload size={18} />
-                    )}
-                    {draftImages.length} fotoğrafı yükle
+                    <p className="eyebrow" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Görev Seç <ChevronDown size={14} />
+                    </p>
+                    <h2>{activePrompt.title}</h2>
+                    <span>{activePrompt.cue}</span>
+                  </div>
+                  <div className="mission-actions">
+                    <div className="point-badge" style={{ background: activePrompt.accent }}>
+                      <Target size={16} />
+                      {activePrompt.points}
+                    </div>
+                    <button
+                      className="shuffle-btn"
+                      type="button"
+                      onClick={shufflePrompt}
+                      aria-label="Görevi Değiştir"
+                    >
+                      <Dices size={20} />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="capture-actions">
+                  <button
+                    className="camera-button"
+                    style={{
+                      background: activePrompt.accent,
+                      boxShadow: `0 8px 24px ${activePrompt.accent}45`,
+                    }}
+                    disabled={isPreparing || isSaving || isFull}
+                    onClick={() => cameraInputRef.current?.click()}
+                    type="button"
+                  >
+                    {isPreparing ? <Loader2 className="spin" size={20} /> : <Camera size={20} />}
+                    <span>Fotoğraf Çek</span>
+                  </button>
+
+                  <button
+                    className="gallery-button"
+                    disabled={isPreparing || isSaving || isFull}
+                    onClick={() => galleryInputRef.current?.click()}
+                    type="button"
+                  >
+                    {isPreparing ? <Loader2 className="spin" size={20} /> : <ImagePlus size={20} />}
+                    <span>{draftImages.length ? 'Galeriden Ekle' : 'Galeriden Seç'}</span>
                   </button>
                 </div>
+
+                <button
+                  type="button"
+                  className="quick-note-action-btn"
+                  onClick={() => setIsNoteOnlyModalOpen(true)}
+                >
+                  <BookHeart size={18} />
+                  <span>Fotoğrafsız Sadece Tebrik & Dilek Notu Yaz</span>
+                </button>
+
+                <input
+                  accept="image/*"
+                  capture="environment"
+                  hidden
+                  onChange={handleFileChange}
+                  ref={cameraInputRef}
+                  type="file"
+                />
+
+                <input
+                  accept="image/*"
+                  hidden
+                  multiple
+                  onChange={handleFileChange}
+                  ref={galleryInputRef}
+                  type="file"
+                />
+
+                {draftImages.length ? (
+                  <div className="preview-frame">
+                    <div className="preview-grid">
+                      {draftImages.map((image, index) => (
+                        <div className="preview-tile" key={`${image.dataUrl}-${index}`}>
+                          <img alt={`Seçilen fotoğraf ${index + 1}`} src={image.dataUrl} />
+                          <button
+                            aria-label="Fotoğrafı çıkar"
+                            disabled={isSaving || isPreparing}
+                            onClick={() => removeDraftImage(index)}
+                            type="button"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="draft-note-box">
+                      <div className="draft-note-header">
+                        <MessageSquareQuote size={16} />
+                        <span>Anı veya Tebrik Notun (İsteğe Bağlı)</span>
+                      </div>
+                      <textarea
+                        className="draft-note-textarea"
+                        value={draftNote}
+                        onChange={(e) => setDraftNote(e.target.value)}
+                        placeholder="Örn: Rabia'cım bir ömür boyu mutluluklar, harika görünüyorsunuz! 💍✨"
+                        maxLength={300}
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="preview-actions">
+                      <span className="batch-count">
+                        {draftImages.length}/{MAX_BATCH_PHOTOS} fotoğraf
+                      </span>
+                      {draftImages.length === 1 && (
+                        <button
+                          className="flip-btn"
+                          disabled={isPreparing || isSaving}
+                          onClick={handleFlipImage}
+                          type="button"
+                          title="Aynala (Çevir)"
+                        >
+                          <FlipHorizontal size={20} />
+                        </button>
+                      )}
+                      <button
+                        disabled={isSaving || isPreparing}
+                        onClick={handleUpload}
+                        type="button"
+                        className="upload-btn"
+                      >
+                        {isSaving ? (
+                          <Loader2 className="spin" size={18} />
+                        ) : (
+                          <Upload size={18} />
+                        )}
+                        {draftImages.length} fotoğrafı yükle
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    className="empty-camera empty-camera-button"
+                    disabled={isPreparing || isSaving || isFull}
+                    onClick={() => galleryInputRef.current?.click()}
+                    type="button"
+                  >
+                    <ImagePlus size={30} />
+                    <span>Fotoğraf Seç veya Not Bırak</span>
+                    <small>Galeriden en fazla {MAX_BATCH_PHOTOS} görsel seçebilirsin</small>
+                  </button>
+                )}
               </div>
-            ) : (
-              <button
-                className="empty-camera empty-camera-button"
-                disabled={isPreparing || isSaving || isFull}
-                onClick={() => galleryInputRef.current?.click()}
-                type="button"
-              >
-                <ImagePlus size={30} />
-                <span>Sadece fotoğraf</span>
-                <small>Galeriden en fazla {MAX_BATCH_PHOTOS} görsel seç</small>
-              </button>
-            )}
-          </div>
-          </>
+            </>
           )}
         </section>
       )}
 
       {activeTab === 'gallery' && (
-        <section className="gallery-view" aria-label="Ortak galeri">
+        <section className="gallery-view" aria-label="Ortak Galeri ve Anı Defteri">
+          <div className="gallery-header-strip">
+            <div className="gallery-filter-bar">
+              <button
+                type="button"
+                className="gallery-filter-pill"
+                data-active={galleryFilter === 'all'}
+                onClick={() => setGalleryFilter('all')}
+              >
+                Tümü ({visiblePhotos.length})
+              </button>
+              <button
+                type="button"
+                className="gallery-filter-pill"
+                data-active={galleryFilter === 'photos'}
+                onClick={() => setGalleryFilter('photos')}
+              >
+                Fotoğraflar
+              </button>
+              <button
+                type="button"
+                className="gallery-filter-pill"
+                data-active={galleryFilter === 'notes'}
+                onClick={() => setGalleryFilter('notes')}
+              >
+                💌 Notlar ({totalNotesCount})
+              </button>
+            </div>
+
+            <button
+              type="button"
+              className="gallery-add-note-btn"
+              onClick={() => setIsNoteOnlyModalOpen(true)}
+            >
+              <BookHeart size={15} />
+              <span>+ Not Yaz</span>
+            </button>
+          </div>
+
           {isLoading ? (
             <div className="loading-state">
               <Loader2 className="spin" size={24} />
-              <span>Galeri açılıyor</span>
+              <span>Galeri ve anılar yükleniyor...</span>
             </div>
-          ) : visiblePhotos.length ? (
+          ) : filteredPhotos.length ? (
             <div className="photo-grid">
-              {visiblePhotos.map((photo) => {
+              {filteredPhotos.map((photo) => {
                 const isLiked = likedPhotos.includes(photo.id)
 
                 return (
-                  <article className="photo-card" key={photo.id}>
-                    <img alt={`${photo.guestName} fotoğrafı`} src={photo.imageUrl} />
-                    <div className="photo-meta">
+                  <article
+                    className="photo-card"
+                    key={photo.id}
+                    onClick={() => setActiveModalPhoto(photo)}
+                  >
+                    <div className="photo-card-media-wrap">
+                      <img
+                        alt={`${photo.guestName} anısı`}
+                        src={photo.imageUrl}
+                        loading="lazy"
+                      />
+                      {photo.note && (
+                        <span className="photo-has-note-badge" title="Tebrik notu var">
+                          <MessageSquareQuote size={12} />
+                        </span>
+                      )}
+                    </div>
+
+                    {photo.note && (
+                      <div className="photo-card-note-strip">
+                        <p className="photo-card-note-text">“{photo.note}”</p>
+                      </div>
+                    )}
+
+                    <div className="photo-meta" onClick={(e) => e.stopPropagation()}>
                       <div>
                         <strong>{photo.guestName}</strong>
                         <span>
@@ -679,7 +904,10 @@ function App() {
                         <button
                           aria-label="Beğen"
                           data-liked={isLiked}
-                          onClick={() => void handleLike(photo)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void handleLike(photo)
+                          }}
                           type="button"
                           className="like-btn"
                         >
@@ -689,7 +917,10 @@ function App() {
                         {photo.guestName === guestName && (
                           <button
                             aria-label="Sil"
-                            onClick={() => void handleDeletePhoto(photo)}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void handleDeletePhoto(photo)
+                            }}
                             type="button"
                             className="delete-btn"
                           >
@@ -705,10 +936,22 @@ function App() {
           ) : (
             <div className="empty-gallery">
               <Images size={34} />
-              <h2>İlk kare bekleniyor</h2>
-              <button type="button" onClick={() => setActiveTab('capture')}>
-                Foto ekle
-              </button>
+              <h2>Henüz anı eklenmedi</h2>
+              <p style={{ color: 'var(--muted)', fontSize: '0.9rem', margin: '4px 0 16px' }}>
+                İlk fotoğrafı veya tebrik notunu sen ekle!
+              </p>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                <button type="button" onClick={() => setActiveTab('capture')}>
+                  Fotoğraf Ekle
+                </button>
+                <button
+                  type="button"
+                  style={{ background: '#E85D75', color: 'white' }}
+                  onClick={() => setIsNoteOnlyModalOpen(true)}
+                >
+                  Not Bırak
+                </button>
+              </div>
             </div>
           )}
         </section>
@@ -718,14 +961,29 @@ function App() {
         <section className="score-view" aria-label="Skor tablosu">
           <div className="my-score">
             <div>
-              <p className="eyebrow">Benim skor</p>
+              <p className="eyebrow">Benim Skor</p>
               <h2>{userRow?.score || 0}</h2>
-              <span>{userRow?.uploads || 0} fotoğraf</span>
+              <span>{userRow?.uploads || 0} anı paylaştın</span>
             </div>
             <Crown size={34} />
           </div>
 
+          <div className="guestbook-export-banner">
+            <div className="export-info">
+              <strong>Hatıra Defteri Arşivi</strong>
+              <small>{visiblePhotos.length} anı ve {totalNotesCount} tebrik notu birikti</small>
+            </div>
+            <button type="button" onClick={exportGuestbook} className="export-download-btn">
+              <FileText size={16} />
+              <span>Notları İndir</span>
+            </button>
+          </div>
+
           <div className="leaderboard">
+            <div className="section-heading">
+              <h2>Liderlik Tablosu</h2>
+              <span>En çok anı biriktirenler</span>
+            </div>
             {leaderboard.length ? (
               leaderboard.slice(0, 8).map((row, index) => (
                 <div className="leader-row" key={row.name}>
@@ -733,7 +991,7 @@ function App() {
                   <div>
                     <span>{row.name}</span>
                     <small>
-                      {row.uploads} foto · {row.likes} beğeni
+                      {row.uploads} anı · {row.likes} beğeni
                     </small>
                   </div>
                   <b>{row.score}</b>
@@ -742,15 +1000,15 @@ function App() {
             ) : (
               <div className="empty-score">
                 <Trophy size={30} />
-                <span>Skorlar ilk fotoğrafla başlar</span>
+                <span>Skorlar ilk anıyla başlar</span>
               </div>
             )}
           </div>
 
           <div className="mission-board">
             <div className="section-heading">
-              <h2>Görev panosu</h2>
-              <span>{PHOTO_PROMPTS.length} kategori</span>
+              <h2>Görev Panosu</h2>
+              <span>{PHOTO_PROMPTS.length} eğlenceli görev</span>
             </div>
             {promptCounts.map((prompt) => (
               <button
@@ -792,17 +1050,22 @@ function App() {
       <footer className="capacity-line">
         <Clock3 size={14} />
         <span>
-          {Math.max(EVENT_CONFIG.maxPhotos - visiblePhotos.length, 0)} karelik yer kaldı
+          {Math.max(EVENT_CONFIG.maxPhotos - visiblePhotos.length, 0)} anılık yer kaldı
         </span>
         <Users size={14} />
       </footer>
 
+      {/* Görev Seçim Modalı */}
       {isSelectorOpen && (
         <div className="modal-overlay" onClick={() => setIsSelectorOpen(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>Görev Listesi</h2>
-              <button className="close-modal" onClick={() => setIsSelectorOpen(false)} aria-label="Kapat">
+              <button
+                className="close-modal"
+                onClick={() => setIsSelectorOpen(false)}
+                aria-label="Kapat"
+              >
                 <X size={20} />
               </button>
             </div>
@@ -825,6 +1088,128 @@ function App() {
                   <span className="modal-mission-points">+{prompt.points} Puan</span>
                 </button>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sadece Tebrik / Dilek Notu Yaz Modalı */}
+      {isNoteOnlyModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsNoteOnlyModalOpen(false)}>
+          <div
+            className="modal-content note-composer-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BookHeart size={22} color="#E85D75" />
+                <h2 style={{ margin: 0 }}>Tebrik & Dilek Notu Yaz</h2>
+              </div>
+              <button
+                className="close-modal"
+                onClick={() => setIsNoteOnlyModalOpen(false)}
+                aria-label="Kapat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="note-modal-subtitle">
+              Çifte en içten tebriklerini ve dileklerini yaz. Notun dijital hatıra kartı olarak anı defterine eklenecektir!
+            </p>
+
+            <textarea
+              className="note-composer-textarea"
+              value={standaloneNote}
+              onChange={(e) => setStandaloneNote(e.target.value)}
+              placeholder="Örn: Sevgili Rabia, bu güzel günde mutluluğunuza ortak olmaktan çok mutluyuz. Bir ömür boyu hep böyle sevgiyle kalın! 💍❤️"
+              maxLength={300}
+              rows={4}
+              autoFocus
+            />
+
+            <div className="note-composer-footer">
+              <span className="char-count">{standaloneNote.length}/300</span>
+              <button
+                type="button"
+                className="submit-note-btn"
+                disabled={isSaving || !standaloneNote.trim()}
+                onClick={handleSaveStandaloneNote}
+              >
+                {isSaving ? (
+                  <Loader2 className="spin" size={18} />
+                ) : (
+                  <Sparkles size={18} />
+                )}
+                <span>Hatıra Kartı Olarak Gönder (+15 Puan)</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tam Ekran Fotoğraf & Not Lightbox Modalı */}
+      {activeModalPhoto && (
+        <div
+          className="modal-overlay lightbox-overlay"
+          onClick={() => setActiveModalPhoto(null)}
+        >
+          <div
+            className="modal-content lightbox-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="lightbox-header">
+              <div className="lightbox-author-meta">
+                <strong>{activeModalPhoto.guestName}</strong>
+                <span>
+                  {activeModalPhoto.promptTitle} · {formatTime(activeModalPhoto.createdAt)}
+                </span>
+              </div>
+              <button
+                className="close-modal"
+                onClick={() => setActiveModalPhoto(null)}
+                aria-label="Kapat"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="lightbox-image-box">
+              <img
+                src={activeModalPhoto.imageUrl}
+                alt={`${activeModalPhoto.guestName} anısı`}
+              />
+            </div>
+
+            {activeModalPhoto.note && (
+              <div className="lightbox-note-box">
+                <span className="lightbox-quote-glyph">“</span>
+                <p className="lightbox-note-text">{activeModalPhoto.note}</p>
+                <span className="lightbox-quote-glyph right">”</span>
+              </div>
+            )}
+
+            <div className="lightbox-footer">
+              <button
+                type="button"
+                className="like-btn lightbox-like-btn"
+                data-liked={likedPhotos.includes(activeModalPhoto.id)}
+                onClick={() => void handleLike(activeModalPhoto)}
+              >
+                <Heart size={18} />
+                <span>{activeModalPhoto.likes} Beğeni</span>
+              </button>
+
+              <a
+                href={activeModalPhoto.imageUrl}
+                download={`nisan-hatirasi-${activeModalPhoto.id}.jpg`}
+                target="_blank"
+                rel="noreferrer"
+                className="lightbox-download-btn"
+              >
+                <Download size={16} />
+                <span>Fotoğrafı Kaydet</span>
+              </a>
             </div>
           </div>
         </div>

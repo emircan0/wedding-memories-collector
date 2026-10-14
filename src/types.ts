@@ -14,6 +14,7 @@ export type MemoryPhoto = {
   promptTitle: string
   imagePath: string | null
   imageUrl: string
+  note?: string | null
   points: number
   likes: number
   createdAt: string
