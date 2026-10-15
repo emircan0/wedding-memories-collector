@@ -1,9 +1,9 @@
 export const EVENT_CONFIG = {
-  title: import.meta.env.VITE_EVENT_TITLE || 'Rabia Mert - Nişan Hatıraları',
+  title: import.meta.env.VITE_EVENT_TITLE || 'İrem İleyda & Vedat - Nişan Hatıraları',
   subtitle:
     import.meta.env.VITE_EVENT_SUBTITLE ||
     'Bu özel günü fotoğraflar ve güzel notlarla ölümsüzleştirin',
-  slug: import.meta.env.VITE_EVENT_SLUG || 'nisan',
+  slug: import.meta.env.VITE_EVENT_SLUG || 'irem-vedat',
   maxPhotos: Number(import.meta.env.VITE_MAX_PHOTOS || 300),
 }
 

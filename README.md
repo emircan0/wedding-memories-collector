@@ -1,4 +1,4 @@
-# Rabia Mert - Nişan Hatıraları & Dijital Anı Defteri
+# İrem İleyda & Vedat - Nişan Hatıraları & Dijital Anı Defteri
 
 QR kod ile açılan, mobil öncelikli interaktif fotoğraf arşivi ve anı defteri. Konuklar isimlerini yazar, nişandan fotoğraflar yükler, çifte özel tebrik/dilek notları bırakır; herkes ortak galeriyi, anı defterini ve oyunlaştırılmış skor tablosunu görür.
 
@@ -32,9 +32,9 @@ Supabase ayarları yoksa uygulama demo modunda IndexedDB ile aynı cihazda çal�
 ## Ortam Değişkenleri (.env.local)
 
 ```bash
-VITE_EVENT_TITLE="Rabia Mert - Nişan Hatıraları"
+VITE_EVENT_TITLE="İrem İleyda & Vedat - Nişan Hatıraları"
 VITE_EVENT_SUBTITLE="Bu özel günü fotoğraflar ve güzel notlarla ölümsüzleştirin"
-VITE_EVENT_SLUG="nisan"
+VITE_EVENT_SLUG="irem-vedat"
 VITE_MAX_PHOTOS="300"
 
 VITE_SUPABASE_URL="https://your-project.supabase.co"

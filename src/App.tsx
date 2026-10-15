@@ -574,7 +574,7 @@ KONUKLARIN TEBRİK & DİLEK NOTLARI:
 ${notes || 'Henüz not yazılmamış.'}
 
 =====================================================
-Rabia Mert ve sevdiklerine bir ömür boyu mutluluklar dileriz!
+${EVENT_CONFIG.title} ve sevdiklerine bir ömür boyu mutluluklar dileriz!
 =====================================================
 `
 
@@ -764,7 +764,7 @@ Rabia Mert ve sevdiklerine bir ömür boyu mutluluklar dileriz!
                         className="draft-note-textarea"
                         value={draftNote}
                         onChange={(e) => setDraftNote(e.target.value)}
-                        placeholder="Örn: Rabia'cım bir ömür boyu mutluluklar, harika görünüyorsunuz! 💍✨"
+                        placeholder="Örn: İrem'cim bir ömür boyu mutluluklar, harika görünüyorsunuz! 💍✨"
                         maxLength={300}
                         rows={2}
                       />
@@ -1122,7 +1122,7 @@ Rabia Mert ve sevdiklerine bir ömür boyu mutluluklar dileriz!
               className="note-composer-textarea"
               value={standaloneNote}
               onChange={(e) => setStandaloneNote(e.target.value)}
-              placeholder="Örn: Sevgili Rabia, bu güzel günde mutluluğunuza ortak olmaktan çok mutluyuz. Bir ömür boyu hep böyle sevgiyle kalın! 💍❤️"
+              placeholder="Örn: Sevgili İrem & Vedat, bu güzel günde mutluluğunuza ortak olmaktan çok mutluyuz. Bir ömür boyu hep böyle sevgiyle kalın! 💍❤️"
               maxLength={300}
               rows={4}
               autoFocus

@@ -53,7 +53,7 @@ create policy "Guests can add photos"
   with check (
     length(guest_name) between 1 and 32
     and points between 0 and 50
-    and (event_slug = 'irem-vedat' or event_slug = 'nisan' or event_slug = 'rabia-nisan')
+    and (event_slug = 'irem-vedat' or event_slug = 'nisan')
   );
 
 drop policy if exists "Guests can like photos" on public.photos;
@@ -155,7 +155,6 @@ create policy "Guests can upload memory photos"
     and (
       (storage.foldername(name))[1] = 'irem-vedat'
       or (storage.foldername(name))[1] = 'nisan'
-      or (storage.foldername(name))[1] = 'rabia-nisan'
     )
   );
 
