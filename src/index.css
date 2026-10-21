@@ -1,24 +1,30 @@
 :root {
-  /* Apple iOS/macOS System Colors */
-  --ink: #1C1C1E;
-  --muted: #8E8E93;
-  --paper: #F2F2F7;
-  --surface: rgba(255, 255, 255, 0.72);
+  /* Luxury Wedding Design Tokens - Ivory, Gold & Botanical Theme */
+  --ink: #2A241F;
+  --ink-light: #443B33;
+  --muted: #7E7265;
+  --paper: #FAF6EE;
+  --surface: rgba(255, 253, 248, 0.86);
   --surface-solid: #FFFFFF;
-  --soft: #E5E5EA;
-  --line: #E5E5EA;
-  --line-strong: #C7C7CC;
-  --rose: #FF2D55;
-  --teal: #007AFF;
-  --gold: #FF9500;
+  --surface-soft: rgba(246, 240, 229, 0.75);
+  --soft: #EFE8DB;
+  --line: rgba(184, 142, 62, 0.2);
+  --line-strong: rgba(184, 142, 62, 0.38);
   
+  /* Romantic Accents */
+  --rose: #C95F72;
+  --rose-soft: rgba(201, 95, 114, 0.12);
+  --teal: #4E654C; /* Sage leaf green */
+  --gold: #B88E3E;
+  --gold-light: #E4C783;
+  --gold-glow: rgba(184, 142, 62, 0.16);
+  --gold-gradient: linear-gradient(135deg, #DEBE7E 0%, #B88E3E 50%, #9B732B 100%);
+  
+  --font-serif: "Cormorant Garamond", Georgia, "Playfair Display", serif;
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+
   color: var(--ink);
-  background-color: var(--paper);
-  background-image: radial-gradient(circle at top left, rgba(0, 122, 255, 0.05), transparent 400px),
-                    radial-gradient(circle at top right, rgba(255, 45, 85, 0.03), transparent 400px);
-  background-attachment: fixed;
-  
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
   font-synthesis: none;
   line-height: 1.5;
@@ -29,7 +35,6 @@
 
 * {
   box-sizing: border-box;
-  letter-spacing: -0.015em; /* Apple typography tight tracking */
 }
 
 html {
@@ -40,11 +45,42 @@ body {
   min-width: 320px;
   min-height: 100svh;
   margin: 0;
-  background: transparent;
+  color: var(--ink);
+  background-color: var(--paper);
+  /* Layered background: delicate warm gradient scrim over the floral arch to ensure full legibility */
+  background-image: 
+    linear-gradient(180deg, 
+      rgba(250, 246, 238, 0.12) 0%, 
+      rgba(250, 246, 238, 0.52) 220px, 
+      rgba(250, 246, 238, 0.94) 540px, 
+      #FAF6EE 900px
+    ),
+    url('/images/wedding-arch-mobile.jpg');
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+@media (min-width: 768px) {
+  body {
+    background-image: 
+      linear-gradient(180deg, 
+        rgba(250, 246, 238, 0.12) 0%, 
+        rgba(250, 246, 238, 0.55) 260px, 
+        rgba(250, 246, 238, 0.92) 680px, 
+        #FAF6EE 1050px
+      ),
+      url('/images/wedding-arch-wide.jpg');
+    background-size: cover;
+    background-position: top center;
+    background-attachment: fixed;
+  }
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
   transition: all 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
 }
@@ -54,8 +90,9 @@ button {
 }
 
 button:focus-visible,
-input:focus-visible {
-  outline: 3px solid rgba(0, 122, 255, 0.4);
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(184, 142, 62, 0.45);
   outline-offset: 2px;
 }
 

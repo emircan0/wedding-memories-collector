@@ -20,6 +20,8 @@ import {
   FlipHorizontal,
   Trash2,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Download,
   MessageSquareQuote,
   FileText,
@@ -170,6 +172,8 @@ function App() {
   const [isNoteOnlyModalOpen, setIsNoteOnlyModalOpen] = useState(false)
   const [standaloneNote, setStandaloneNote] = useState('')
   const [activeModalPhoto, setActiveModalPhoto] = useState<MemoryPhoto | null>(null)
+  const [isCoupleModalOpen, setIsCoupleModalOpen] = useState(false)
+  const [selectedCouplePhotoIdx, setSelectedCouplePhotoIdx] = useState(0)
   const [galleryFilter, setGalleryFilter] = useState<'all' | 'photos' | 'notes'>('all')
 
   const [photos, setPhotos] = useState<MemoryPhoto[]>([])
@@ -588,17 +592,99 @@ ${EVENT_CONFIG.title} ve sevdiklerine bir ömür boyu mutluluklar dileriz!
     setNotice('Tüm anı ve tebrik notları indirildi! 📥')
   }
 
+  async function handleDownloadPhoto(url: string, filename: string) {
+    try {
+      const res = await fetch(url)
+      const blob = await res.blob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+      setNotice('Fotoğraf başarıyla indirildi! 📥')
+    } catch {
+      window.open(url, '_blank')
+    }
+  }
+
   return (
     <main className="app-shell">
-      <header className="event-bar">
-        <div>
-          <p className="eyebrow">QR Hatıra Arşivi & Anı Defteri</p>
-          <h1>{EVENT_CONFIG.title}</h1>
-          <p>{EVENT_CONFIG.subtitle}</p>
+      <header className="wedding-hero-header">
+        <div className="header-top-bar">
+          <div className="sync-pill" aria-label="Bağlantı durumu">
+            {isSupabaseConfigured ? <CheckCircle2 size={14} /> : <WifiOff size={14} />}
+            <span>{isSupabaseConfigured ? 'Canlı Anı Defteri' : 'Demo'}</span>
+          </div>
+          <span className="event-date-badge">💍 {EVENT_CONFIG.eventTag || 'Nişan Hatıraları'}</span>
         </div>
-        <div className="sync-pill" aria-label="Bağlantı durumu">
-          {isSupabaseConfigured ? <CheckCircle2 size={16} /> : <WifiOff size={16} />}
-          <span>{isSupabaseConfigured ? 'Canlı' : 'Demo'}</span>
+
+        <div className="hero-arch-card">
+          <button
+            type="button"
+            className="couple-portrait-btn"
+            onClick={() => setIsCoupleModalOpen(true)}
+            aria-label="Çiftin Albümünü Görüntüle"
+            title="Çiftin Fotoğraflarını Gör"
+          >
+            <img
+              src={EVENT_CONFIG.couplePhoto || '/images/couple-placeholder.jpg'}
+              alt={EVENT_CONFIG.names || EVENT_CONFIG.title}
+              className="couple-portrait-img"
+            />
+            <span className="couple-badge-sparkle">
+              <Sparkles size={13} />
+            </span>
+          </button>
+
+          <p className="hero-eyebrow">ÖMÜR BOYU BİRLİKTE</p>
+          <h1 className="hero-title">{EVENT_CONFIG.names || EVENT_CONFIG.title}</h1>
+
+          <div className="royal-divider">
+            <span className="royal-divider-line" />
+            <span className="royal-divider-ornament">✧ ❀ ✧</span>
+            <span className="royal-divider-line" />
+          </div>
+
+          <p className="hero-subtitle">{EVENT_CONFIG.subtitle}</p>
+
+          {/* Çiftin Hikaye Şeridi (Love Story Highlights Bar) */}
+          <div className="couple-stories-bar">
+            <div className="stories-bar-header">
+              <span className="stories-bar-title">✨ Bizim Hikayemiz</span>
+              <button
+                type="button"
+                className="stories-all-btn"
+                onClick={() => {
+                  setSelectedCouplePhotoIdx(0)
+                  setIsCoupleModalOpen(true)
+                }}
+              >
+                Albümü Gör ({EVENT_CONFIG.couplePhotos.length})
+              </button>
+            </div>
+            <div className="stories-scroll">
+              {EVENT_CONFIG.couplePhotos.map((item, idx) => (
+                <button
+                  key={item.url}
+                  type="button"
+                  className={`story-pill-card ${idx === selectedCouplePhotoIdx ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedCouplePhotoIdx(idx)
+                    setIsCoupleModalOpen(true)
+                  }}
+                  title={item.title}
+                >
+                  <div className="story-thumb-wrap">
+                    <img src={item.url} alt={item.title} />
+                  </div>
+                  <span className="story-pill-tag">{item.tag}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </header>
 
@@ -856,6 +942,28 @@ ${EVENT_CONFIG.title} ve sevdiklerine bir ömür boyu mutluluklar dileriz!
               <BookHeart size={15} />
               <span>+ Not Yaz</span>
             </button>
+          </div>
+
+          {/* Çiftin Özel Köşesi Kartı */}
+          <div
+            className="couple-gallery-spotlight"
+            onClick={() => {
+              setSelectedCouplePhotoIdx(0)
+              setIsCoupleModalOpen(true)
+            }}
+          >
+            <div className="spotlight-left">
+              <span className="spotlight-badge">💍 Çiftin Özel Albümü</span>
+              <h3>İrem İlayda & Vedat</h3>
+              <p>5 Özel Hatıra Fotoğrafı · Dokun ve İncele</p>
+            </div>
+            <div className="spotlight-thumbs-stack">
+              {EVENT_CONFIG.couplePhotos.slice(0, 3).map((item, i) => (
+                <div key={item.url} className={`stack-thumb stack-${i}`}>
+                  <img src={item.url} alt="" />
+                </div>
+              ))}
+            </div>
           </div>
 
           {isLoading ? (
@@ -1200,20 +1308,162 @@ ${EVENT_CONFIG.title} ve sevdiklerine bir ömür boyu mutluluklar dileriz!
                 <span>{activeModalPhoto.likes} Beğeni</span>
               </button>
 
-              <a
-                href={activeModalPhoto.imageUrl}
-                download={`nisan-hatirasi-${activeModalPhoto.id}.jpg`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
                 className="lightbox-download-btn"
+                onClick={() =>
+                  void handleDownloadPhoto(
+                    activeModalPhoto.imageUrl,
+                    `nisan-hatirasi-${activeModalPhoto.id}.jpg`,
+                  )
+                }
               >
                 <Download size={16} />
                 <span>Fotoğrafı Kaydet</span>
-              </a>
+              </button>
+
+              {activeModalPhoto.guestName === guestName && (
+                <button
+                  type="button"
+                  className="lightbox-delete-btn"
+                  onClick={() => void handleDeletePhoto(activeModalPhoto)}
+                  aria-label="Anıyı Sil"
+                  title="Anıyı Sil"
+                >
+                  <Trash2 size={16} />
+                  <span>Sil</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Çiftin Fotoğraf Albümü Modalı */}
+      {isCoupleModalOpen && (() => {
+        const currentCouplePhoto =
+          EVENT_CONFIG.couplePhotos[selectedCouplePhotoIdx] || EVENT_CONFIG.couplePhotos[0]
+        const totalCouplePhotos = EVENT_CONFIG.couplePhotos.length
+
+        return (
+          <div
+            className="modal-overlay couple-modal-overlay"
+            onClick={() => setIsCoupleModalOpen(false)}
+          >
+            <div
+              className="modal-content couple-modal-card"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="couple-modal-header">
+                <div className="couple-modal-title-group">
+                  <span className="couple-modal-tag">💍 Nişan Hatıraları</span>
+                  <h2>{EVENT_CONFIG.names || EVENT_CONFIG.title}</h2>
+                </div>
+                <button
+                  type="button"
+                  className="close-modal"
+                  onClick={() => setIsCoupleModalOpen(false)}
+                  aria-label="Kapat"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="couple-modal-gallery">
+                <img
+                  src={currentCouplePhoto.url}
+                  alt=""
+                  className="couple-modal-blur-bg"
+                  aria-hidden="true"
+                />
+                <img
+                  src={currentCouplePhoto.url}
+                  alt={currentCouplePhoto.title}
+                  className="couple-modal-main-img"
+                />
+
+                {totalCouplePhotos > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      className="couple-nav-btn prev"
+                      onClick={() =>
+                        setSelectedCouplePhotoIdx((p) =>
+                          p > 0 ? p - 1 : totalCouplePhotos - 1,
+                        )
+                      }
+                      aria-label="Önceki Fotoğraf"
+                    >
+                      <ChevronLeft size={22} />
+                    </button>
+                    <button
+                      type="button"
+                      className="couple-nav-btn next"
+                      onClick={() =>
+                        setSelectedCouplePhotoIdx((p) =>
+                          p < totalCouplePhotos - 1 ? p + 1 : 0,
+                        )
+                      }
+                      aria-label="Sonraki Fotoğraf"
+                    >
+                      <ChevronRight size={22} />
+                    </button>
+                    <span className="couple-counter-badge">
+                      {selectedCouplePhotoIdx + 1} / {totalCouplePhotos}
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Fotoğraf Başlığı ve Notu */}
+              <div className="couple-photo-caption-card">
+                <span className="couple-photo-pill">{currentCouplePhoto.tag}</span>
+                <h3 className="couple-photo-caption-title">{currentCouplePhoto.title}</h3>
+                <p className="couple-photo-caption-desc">{currentCouplePhoto.subtitle}</p>
+              </div>
+
+              {/* Küçük Resimler (Thumbnails) */}
+              {totalCouplePhotos > 1 && (
+                <div className="couple-photo-thumbnails">
+                  {EVENT_CONFIG.couplePhotos.map((item, idx) => (
+                    <button
+                      key={item.url}
+                      type="button"
+                      className={`thumb-btn ${idx === selectedCouplePhotoIdx ? 'active' : ''}`}
+                      onClick={() => setSelectedCouplePhotoIdx(idx)}
+                      title={item.title}
+                    >
+                      <img src={item.url} alt={item.title} />
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="couple-modal-body">
+                <p className="couple-quote">
+                  “Bir ömür boyu sürecek güzel bir yolculuğun en tatlı başlangıcında,
+                  bu mutlu günümüzde yanımızda olan tüm sevdiklerimize teşekkür ederiz.”
+                </p>
+                <div className="couple-modal-footer-actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void handleDownloadPhoto(
+                        currentCouplePhoto.url,
+                        `irem-vedat-${selectedCouplePhotoIdx + 1}.jpg`,
+                      )
+                    }
+                    className="lightbox-download-btn"
+                  >
+                    <Download size={15} />
+                    <span>Fotoğrafı Kaydet</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </main>
   )
 }
