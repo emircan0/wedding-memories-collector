@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Camera,
   CheckCircle2,
-  Clock3,
   Crown,
   Heart,
   ImagePlus,
@@ -12,7 +11,6 @@ import {
   Target,
   Trophy,
   Upload,
-  Users,
   WifiOff,
   X,
   Dices,
@@ -1154,14 +1152,6 @@ ${EVENT_CONFIG.title} ve sevdiklerine bir ömür boyu mutluluklar dileriz!
           )
         })}
       </nav>
-
-      <footer className="capacity-line">
-        <Clock3 size={14} />
-        <span>
-          {Math.max(EVENT_CONFIG.maxPhotos - visiblePhotos.length, 0)} anılık yer kaldı
-        </span>
-        <Users size={14} />
-      </footer>
 
       {/* Görev Seçim Modalı */}
       {isSelectorOpen && (
