@@ -970,74 +970,186 @@ ${EVENT_CONFIG.title} ve sevdiklerine bir ömür boyu mutluluklar dileriz!
               <span>Galeri ve anılar yükleniyor...</span>
             </div>
           ) : filteredPhotos.length ? (
-            <div className="photo-grid">
-              {filteredPhotos.map((photo) => {
-                const isLiked = likedPhotos.includes(photo.id)
+            <div className="photo-grid-columns">
+              <div className="photo-grid-col">
+                {filteredPhotos
+                  .filter((_, idx) => idx % 2 === 0)
+                  .map((photo, colIdx) => {
+                    const isLiked = likedPhotos.includes(photo.id)
+                    const globalIdx = colIdx * 2
 
-                return (
-                  <article
-                    className="photo-card"
-                    key={photo.id}
-                    onClick={() => setActiveModalPhoto(photo)}
-                  >
-                    <div className="photo-card-media-wrap">
-                      <img
-                        alt={`${photo.guestName} anısı`}
-                        src={photo.imageUrl}
-                        loading="lazy"
-                      />
-                      {photo.note && (
-                        <span className="photo-has-note-badge" title="Tebrik notu var">
-                          <MessageSquareQuote size={12} />
-                        </span>
-                      )}
-                    </div>
-
-                    {photo.note && (
-                      <div className="photo-card-note-strip">
-                        <p className="photo-card-note-text">“{photo.note}”</p>
-                      </div>
-                    )}
-
-                    <div className="photo-meta" onClick={(e) => e.stopPropagation()}>
-                      <div>
-                        <strong>{photo.guestName}</strong>
-                        <span>
-                          {photo.promptTitle} · {formatTime(photo.createdAt)}
-                        </span>
-                      </div>
-                      <div className="photo-actions">
-                        <button
-                          aria-label="Beğen"
-                          data-liked={isLiked}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            void handleLike(photo)
-                          }}
-                          type="button"
-                          className="like-btn"
-                        >
-                          <Heart size={17} />
-                          <span>{photo.likes}</span>
-                        </button>
-                        {photo.guestName === guestName && (
-                          <button
-                            aria-label="Sil"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              void handleDeletePhoto(photo)
+                    return (
+                      <article
+                        className="photo-card"
+                        key={photo.id}
+                        onClick={() => setActiveModalPhoto(photo)}
+                      >
+                        <div className="photo-card-media-wrap">
+                          <img
+                            alt={`${photo.guestName} anısı`}
+                            src={photo.imageUrl}
+                            loading={globalIdx < 4 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            onError={(e) => {
+                              const target = e.currentTarget
+                              if (!target.dataset.retried) {
+                                target.dataset.retried = 'true'
+                                target.src =
+                                  photo.imageUrl +
+                                  (photo.imageUrl.includes('?') ? '&' : '?') +
+                                  'r=1'
+                              }
                             }}
-                            type="button"
-                            className="delete-btn"
-                          >
-                            <Trash2 size={17} />
-                          </button>
+                          />
+                          {photo.note && (
+                            <span
+                              className="photo-has-note-badge"
+                              title="Tebrik notu var"
+                            >
+                              <MessageSquareQuote size={12} />
+                            </span>
+                          )}
+                        </div>
+
+                        {photo.note && (
+                          <div className="photo-card-note-strip">
+                            <p className="photo-card-note-text">“{photo.note}”</p>
+                          </div>
                         )}
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
+
+                        <div
+                          className="photo-meta"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div>
+                            <strong>{photo.guestName}</strong>
+                            <span>
+                              {photo.promptTitle} · {formatTime(photo.createdAt)}
+                            </span>
+                          </div>
+                          <div className="photo-actions">
+                            <button
+                              aria-label="Beğen"
+                              data-liked={isLiked}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                void handleLike(photo)
+                              }}
+                              type="button"
+                              className="like-btn"
+                            >
+                              <Heart size={17} />
+                              <span>{photo.likes}</span>
+                            </button>
+                            {photo.guestName === guestName && (
+                              <button
+                                aria-label="Sil"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  void handleDeletePhoto(photo)
+                                }}
+                                type="button"
+                                className="delete-btn"
+                              >
+                                <Trash2 size={17} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
+              </div>
+
+              <div className="photo-grid-col">
+                {filteredPhotos
+                  .filter((_, idx) => idx % 2 === 1)
+                  .map((photo, colIdx) => {
+                    const isLiked = likedPhotos.includes(photo.id)
+                    const globalIdx = colIdx * 2 + 1
+
+                    return (
+                      <article
+                        className="photo-card"
+                        key={photo.id}
+                        onClick={() => setActiveModalPhoto(photo)}
+                      >
+                        <div className="photo-card-media-wrap">
+                          <img
+                            alt={`${photo.guestName} anısı`}
+                            src={photo.imageUrl}
+                            loading={globalIdx < 4 ? 'eager' : 'lazy'}
+                            decoding="async"
+                            onError={(e) => {
+                              const target = e.currentTarget
+                              if (!target.dataset.retried) {
+                                target.dataset.retried = 'true'
+                                target.src =
+                                  photo.imageUrl +
+                                  (photo.imageUrl.includes('?') ? '&' : '?') +
+                                  'r=1'
+                              }
+                            }}
+                          />
+                          {photo.note && (
+                            <span
+                              className="photo-has-note-badge"
+                              title="Tebrik notu var"
+                            >
+                              <MessageSquareQuote size={12} />
+                            </span>
+                          )}
+                        </div>
+
+                        {photo.note && (
+                          <div className="photo-card-note-strip">
+                            <p className="photo-card-note-text">“{photo.note}”</p>
+                          </div>
+                        )}
+
+                        <div
+                          className="photo-meta"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div>
+                            <strong>{photo.guestName}</strong>
+                            <span>
+                              {photo.promptTitle} · {formatTime(photo.createdAt)}
+                            </span>
+                          </div>
+                          <div className="photo-actions">
+                            <button
+                              aria-label="Beğen"
+                              data-liked={isLiked}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                void handleLike(photo)
+                              }}
+                              type="button"
+                              className="like-btn"
+                            >
+                              <Heart size={17} />
+                              <span>{photo.likes}</span>
+                            </button>
+                            {photo.guestName === guestName && (
+                              <button
+                                aria-label="Sil"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  void handleDeletePhoto(photo)
+                                }}
+                                type="button"
+                                className="delete-btn"
+                              >
+                                <Trash2 size={17} />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  })}
+              </div>
             </div>
           ) : (
             <div className="empty-gallery">
