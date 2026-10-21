@@ -1689,10 +1689,17 @@
 
 .couple-photo-thumbnails {
   display: flex;
-  gap: 8px;
-  margin-top: 10px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: 12px auto 6px;
+  padding: 8px 10px;
+  border-radius: 18px;
+  background: rgba(246, 241, 233, 0.85);
+  border: 1px solid rgba(184, 142, 62, 0.22);
+  box-shadow: inset 0 1px 3px rgba(42, 36, 31, 0.05);
+  max-width: 100%;
   overflow-x: auto;
-  padding-bottom: 4px;
   scrollbar-width: none;
 }
 
@@ -1701,22 +1708,34 @@
 }
 
 .couple-photo-thumbnails .thumb-btn {
-  width: 54px;
-  height: 54px;
+  position: relative;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
   overflow: hidden;
-  border: 2px solid transparent;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(42, 36, 31, 0.12);
   padding: 0;
   cursor: pointer;
   background: var(--soft);
   flex-shrink: 0;
-  transition: all 0.2s ease;
+  opacity: 0.82;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.couple-photo-thumbnails .thumb-btn:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+  border-color: rgba(184, 142, 62, 0.5);
+  box-shadow: 0 4px 10px rgba(42, 36, 31, 0.16);
 }
 
 .couple-photo-thumbnails .thumb-btn.active {
+  opacity: 1;
   border-color: var(--gold);
-  box-shadow: 0 0 0 2px rgba(184, 142, 62, 0.35);
-  transform: scale(1.05);
+  box-shadow: 0 0 0 2.5px rgba(184, 142, 62, 0.45), 0 6px 14px rgba(184, 142, 62, 0.3);
+  transform: translateY(-2px) scale(1.08);
+  z-index: 2;
 }
 
 .couple-photo-thumbnails .thumb-btn img {
